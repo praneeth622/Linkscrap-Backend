@@ -118,6 +118,112 @@ export class BrightdataService {
     }
   }
 
+  async triggerDiscoverByKeyword(datasetId: string, payload: any[]): Promise<any> {
+    try {
+      const baseUrl = this.configService.get<string>('BRIGHTDATA_BASE_URL');
+      const apiKey = this.configService.get<string>('BRIGHTDATA_API_KEY');
+
+      if (!baseUrl || !apiKey) {
+        throw new HttpException(
+          'BrightData configuration is missing',
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }
+
+      const url = `${baseUrl}?dataset_id=${datasetId}&include_errors=true&type=discover_new&discover_by=keyword`;
+
+      this.logger.log(`Triggering BrightData discover by keyword dataset: ${datasetId} with ${payload.length} search queries`);
+      this.logger.debug(`Request URL: ${url}`);
+      this.logger.debug(`Request payload: ${JSON.stringify(payload, null, 2)}`);
+
+      const response = await firstValueFrom(
+        this.httpService.post(url, payload, {
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+          },
+        }),
+      );
+
+      this.logger.log(`BrightData discover by keyword response received for dataset: ${datasetId}`);
+      this.logger.debug(`Response status: ${response.status}`);
+      this.logger.debug(`Response data type: ${typeof response.data}`);
+      this.logger.debug(`Response data: ${JSON.stringify(response.data, null, 2)}`);
+
+      return response.data;
+    } catch (error) {
+      this.logger.error(`BrightData API error for discover by keyword dataset ${datasetId}:`);
+      this.logger.error(`Error message: ${error.message}`);
+
+      if (error.response) {
+        this.logger.error(`Response status: ${error.response.status}`);
+        this.logger.error(`Response data: ${JSON.stringify(error.response.data, null, 2)}`);
+      }
+
+      if (error.request) {
+        this.logger.error(`Request failed: ${error.request}`);
+      }
+
+      throw new HttpException(
+        `Failed to discover job listings by keyword from BrightData: ${error.message}`,
+        HttpStatus.BAD_GATEWAY,
+      );
+    }
+  }
+
+  async triggerDiscoverByUrl(datasetId: string, payload: any[]): Promise<any> {
+    try {
+      const baseUrl = this.configService.get<string>('BRIGHTDATA_BASE_URL');
+      const apiKey = this.configService.get<string>('BRIGHTDATA_API_KEY');
+
+      if (!baseUrl || !apiKey) {
+        throw new HttpException(
+          'BrightData configuration is missing',
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }
+
+      const url = `${baseUrl}?dataset_id=${datasetId}&include_errors=true&type=discover_new&discover_by=url`;
+
+      this.logger.log(`Triggering BrightData discover by URL dataset: ${datasetId} with ${payload.length} URLs`);
+      this.logger.debug(`Request URL: ${url}`);
+      this.logger.debug(`Request payload: ${JSON.stringify(payload, null, 2)}`);
+
+      const response = await firstValueFrom(
+        this.httpService.post(url, payload, {
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+          },
+        }),
+      );
+
+      this.logger.log(`BrightData discover by URL response received for dataset: ${datasetId}`);
+      this.logger.debug(`Response status: ${response.status}`);
+      this.logger.debug(`Response data type: ${typeof response.data}`);
+      this.logger.debug(`Response data: ${JSON.stringify(response.data, null, 2)}`);
+
+      return response.data;
+    } catch (error) {
+      this.logger.error(`BrightData API error for discover by URL dataset ${datasetId}:`);
+      this.logger.error(`Error message: ${error.message}`);
+
+      if (error.response) {
+        this.logger.error(`Response status: ${error.response.status}`);
+        this.logger.error(`Response data: ${JSON.stringify(error.response.data, null, 2)}`);
+      }
+
+      if (error.request) {
+        this.logger.error(`Request failed: ${error.request}`);
+      }
+
+      throw new HttpException(
+        `Failed to discover job listings by URL from BrightData: ${error.message}`,
+        HttpStatus.BAD_GATEWAY,
+      );
+    }
+  }
+
   async monitorProgress(snapshotId: string): Promise<any> {
     try {
       const apiKey = this.configService.get<string>('BRIGHTDATA_API_KEY');
