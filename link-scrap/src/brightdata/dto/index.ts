@@ -5,3 +5,5 @@ export * from './linkedin-job-url.dto';
 export * from './job-search.dto';
 export * from './job-discovery-url.dto';
 export * from './linkedin-post-url.dto';
+export * from './linkedin-company-url.dto';
+export * from './linkedin-profile-url.dto';

@@ -14,6 +14,7 @@ import { PostDiscoverCompanyModule } from './linkedin/post-discover-company/post
 import { PostDiscoverProfileModule } from './linkedin/post-discover-profile/post-discover-profile.module';
 import { PostDiscoverUrlModule } from './linkedin/post-discover-url/post-discover-url.module';
 import { PeopleSearchModule } from './linkedin/people-search/people-search.module';
+import { PeopleSearchCollectModule } from './linkedin/people-search-collect/people-search-collect.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { PeopleSearchModule } from './linkedin/people-search/people-search.modul
     PostDiscoverProfileModule,
     PostDiscoverUrlModule,
     PeopleSearchModule,
+    PeopleSearchCollectModule,
   ],
   controllers: [AppController],
   providers: [AppService],

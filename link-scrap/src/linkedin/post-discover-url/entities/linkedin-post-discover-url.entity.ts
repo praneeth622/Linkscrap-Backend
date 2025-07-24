@@ -1,12 +1,12 @@
 import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 
-@Entity('linkedin_posts_discover_company')
-export class LinkedInPostDiscoverCompany {
+@Entity('linkedin_posts_discover_url')
+export class LinkedInPostDiscoverUrl {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column()
-  post_id: string;
+  @Column({ unique: true })
+  linkedin_post_id: string;
 
   @Column()
   url: string;
@@ -15,12 +15,12 @@ export class LinkedInPostDiscoverCompany {
   user_id: string;
 
   @Column({ nullable: true })
-  user_url: string;
+  use_url: string;
 
   @Column({ nullable: true })
   post_type: string;
 
-  @Column('timestamp', { nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   date_posted: Date | null;
 
   @Column({ nullable: true })
@@ -42,7 +42,7 @@ export class LinkedInPostDiscoverCompany {
   embedded_links: string[];
 
   @Column('jsonb', { nullable: true })
-  images: any;
+  images: string[];
 
   @Column('jsonb', { nullable: true })
   videos: any;
@@ -51,12 +51,24 @@ export class LinkedInPostDiscoverCompany {
   video_duration: string;
 
   @Column('jsonb', { nullable: true })
-  repost: any;
+  repost: {
+    repost_attachments: any;
+    repost_date: string;
+    repost_hangtags: any;
+    repost_id: string;
+    repost_text: string;
+    repost_url: string;
+    repost_user_id: string;
+    repost_user_name: string;
+    repost_user_title: string;
+    tagged_companies: any;
+    tagged_users: any;
+  };
 
-  @Column('int', { default: 0 })
+  @Column({ default: 0 })
   num_likes: number;
 
-  @Column('int', { default: 0 })
+  @Column({ default: 0 })
   num_comments: number;
 
   @Column('jsonb', { nullable: true })
@@ -68,11 +80,11 @@ export class LinkedInPostDiscoverCompany {
   @Column({ nullable: true })
   author_profile_pic: string;
 
-  @Column('int', { nullable: true })
-  num_connections: number | null;
+  @Column({ nullable: true })
+  num_connections: number;
 
-  @Column('int', { nullable: true })
-  user_followers: number | null;
+  @Column({ default: 0 })
+  user_followers: number;
 
   @Column({ nullable: true })
   account_type: string;
@@ -83,17 +95,17 @@ export class LinkedInPostDiscoverCompany {
   @Column('jsonb', { nullable: true })
   more_relevant_posts: any;
 
-  @Column('int', { default: 0 })
+  @Column({ default: 0 })
   user_posts: number;
 
-  @Column('int', { default: 0 })
+  @Column({ default: 0 })
   user_articles: number;
 
   @Column('jsonb', { nullable: true })
-  tagged_companies: any;
+  tagged_companies: any[];
 
   @Column('jsonb', { nullable: true })
-  tagged_people: any;
+  tagged_people: any[];
 
   @Column('jsonb', { nullable: true })
   external_link_data: any;
@@ -104,14 +116,8 @@ export class LinkedInPostDiscoverCompany {
   @Column({ nullable: true })
   document_cover_image: string;
 
-  @Column('int', { nullable: true })
-  document_page_count: number | null;
-
-  @Column()
-  company_url: string;
-
   @Column({ nullable: true })
-  company_name: string;
+  document_page_count: number;
 
   @Column()
   input_url: string;
