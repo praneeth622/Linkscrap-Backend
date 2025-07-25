@@ -18,7 +18,7 @@ export class PeopleProfileDiscoverService {
     private readonly peopleProfileDiscoverRepository: Repository<PeopleProfileDiscover>,
   ) {}
 
-  async discoverProfiles(peopleNameSearchDto: CreatePeopleProfileDiscoverDto) {
+  async discoverProfiles(peopleNameSearchDto: CreatePeopleProfileDiscoverDto, userId: string) {
     try {
       const datasetId = this.configService.get<string>('PEOPLE_PROFILE_DISCOVER_DATASET_ID');
 
@@ -44,7 +44,7 @@ export class PeopleProfileDiscoverService {
         const profilesData = await this.waitForDataAndRetrieve(brightDataResponse.snapshot_id);
 
         // Save profiles to database with search metadata
-        const savedProfiles = await this.saveProfilesToDatabase(profilesData, peopleNameSearchDto.names);
+        const savedProfiles = await this.saveProfilesToDatabase(profilesData, peopleNameSearchDto.names, userId);
 
         this.logger.log(`Successfully processed ${savedProfiles.length} discovered profiles`);
 
@@ -63,7 +63,7 @@ export class PeopleProfileDiscoverService {
         this.logger.log(`Received direct response with ${brightDataResponse.length} profiles`);
 
         // Save profiles to database with search metadata
-        const savedProfiles = await this.saveProfilesToDatabase(brightDataResponse, peopleNameSearchDto.names);
+        const savedProfiles = await this.saveProfilesToDatabase(brightDataResponse, peopleNameSearchDto.names, userId);
 
         return {
           success: true,
@@ -178,7 +178,7 @@ export class PeopleProfileDiscoverService {
     return [];
   }
 
-  private async saveProfilesToDatabase(profiles: any[], searchNames: any[]): Promise<PeopleProfileDiscover[]> {
+  private async saveProfilesToDatabase(profiles: any[], searchNames: any[], userId: string): Promise<PeopleProfileDiscover[]> {
     const savedProfiles: PeopleProfileDiscover[] = [];
 
     if (!Array.isArray(profiles)) {
@@ -203,9 +203,12 @@ export class PeopleProfileDiscoverService {
         // Map BrightData response to database entity format
         const mappedProfile = this.mapDiscoveredProfileData(profileData, searchNames);
 
-        // Check if profile already exists
+        // Add user_id to the mapped profile
+        mappedProfile.user_id = userId;
+
+        // Check if profile already exists for this user
         const existingProfile = await this.peopleProfileDiscoverRepository.findOne({
-          where: { linkedin_num_id: mappedProfile.linkedin_num_id },
+          where: { linkedin_num_id: mappedProfile.linkedin_num_id, user_id: userId },
         });
 
         if (existingProfile) {
@@ -309,7 +312,7 @@ export class PeopleProfileDiscoverService {
     }
   }
 
-  async getSnapshotData(snapshotId: string) {
+  async getSnapshotData(snapshotId: string, userId: string) {
     try {
       // First check the status
       const statusData = await this.brightdataService.monitorProgress(snapshotId);
@@ -328,7 +331,7 @@ export class PeopleProfileDiscoverService {
       
       if (Array.isArray(profilesData)) {
         // Save to database - note: we don't have search criteria here, so we'll save without search metadata
-        const savedProfiles = await this.saveProfilesToDatabase(profilesData, []);
+        const savedProfiles = await this.saveProfilesToDatabase(profilesData, [], userId);
         
         return {
           success: true,
@@ -353,49 +356,50 @@ export class PeopleProfileDiscoverService {
     }
   }
 
-  async getAllDiscoveredProfiles() {
+  async getAllDiscoveredProfiles(userId: string) {
     return this.peopleProfileDiscoverRepository.find({
+      where: { user_id: userId },
       order: { created_at: 'DESC' },
     });
   }
 
-  async getDiscoveredProfileById(id: string) {
-    return this.peopleProfileDiscoverRepository.findOne({ where: { id } });
+  async getDiscoveredProfileById(id: string, userId: string) {
+    return this.peopleProfileDiscoverRepository.findOne({ where: { id, user_id: userId } });
   }
 
-  async getDiscoveredProfileByLinkedInId(linkedinId: string) {
+  async getDiscoveredProfileByLinkedInId(linkedinId: string, userId: string) {
     return this.peopleProfileDiscoverRepository.findOne({
-      where: { linkedin_id: linkedinId },
+      where: { linkedin_num_id: linkedinId, user_id: userId },
     });
   }
 
-  async searchByName(firstName: string, lastName: string) {
+  async searchByName(firstName: string, lastName: string, userId: string) {
     return this.peopleProfileDiscoverRepository.find({
       where: [
-        { first_name: firstName, last_name: lastName },
-        { search_first_name: firstName, search_last_name: lastName }
+        { first_name: firstName, last_name: lastName, user_id: userId },
+        { search_first_name: firstName, search_last_name: lastName, user_id: userId }
       ],
       order: { created_at: 'DESC' }
     });
   }
 
-  create(createPeopleProfileDiscoverDto: CreatePeopleProfileDiscoverDto) {
-    return this.discoverProfiles(createPeopleProfileDiscoverDto);
+  create(createPeopleProfileDiscoverDto: CreatePeopleProfileDiscoverDto, userId: string) {
+    return this.discoverProfiles(createPeopleProfileDiscoverDto, userId);
   }
 
-  findAll() {
-    return this.getAllDiscoveredProfiles();
+  findAll(userId: string) {
+    return this.getAllDiscoveredProfiles(userId);
   }
 
-  findOne(id: number) {
-    return this.getDiscoveredProfileById(id.toString());
+  findOne(id: number, userId: string) {
+    return this.getDiscoveredProfileById(id.toString(), userId);
   }
 
-  update(id: number, updatePeopleProfileDiscoverDto: UpdatePeopleProfileDiscoverDto) {
+  update(id: number, updatePeopleProfileDiscoverDto: UpdatePeopleProfileDiscoverDto, userId: string) {
     return `This action updates a #${id} peopleProfileDiscover`;
   }
 
-  remove(id: number) {
+  remove(id: number, userId: string) {
     return `This action removes a #${id} peopleProfileDiscover`;
   }
 }

@@ -1,10 +1,12 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, HttpStatus } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
+import { CurrentUserId } from '../../auth/decorators/user.decorator';
 import { PeopleProfileDiscoverService } from './people-profile-discover.service';
 import { CreatePeopleProfileDiscoverDto } from './dto/create-people-profile-discover.dto';
 import { UpdatePeopleProfileDiscoverDto } from './dto/update-people-profile-discover.dto';
 
 @ApiTags('LinkedIn People Profile - Discover by Name')
+@ApiBearerAuth()
 @Controller('linkedin/people-profile/discover')
 export class PeopleProfileDiscoverController {
   constructor(private readonly peopleProfileDiscoverService: PeopleProfileDiscoverService) {}
@@ -65,8 +67,11 @@ export class PeopleProfileDiscoverController {
     status: 502, 
     description: 'BrightData API error' 
   })
-  async discoverProfiles(@Body() createPeopleProfileDiscoverDto: CreatePeopleProfileDiscoverDto) {
-    return this.peopleProfileDiscoverService.discoverProfiles(createPeopleProfileDiscoverDto);
+  async discoverProfiles(
+    @Body() createPeopleProfileDiscoverDto: CreatePeopleProfileDiscoverDto,
+    @CurrentUserId() userId: string
+  ) {
+    return this.peopleProfileDiscoverService.discoverProfiles(createPeopleProfileDiscoverDto, userId);
   }
 
   @Get()
@@ -78,8 +83,8 @@ export class PeopleProfileDiscoverController {
     status: 200, 
     description: 'Discovered profiles retrieved successfully' 
   })
-  async getAllDiscoveredProfiles() {
-    return this.peopleProfileDiscoverService.getAllDiscoveredProfiles();
+  async getAllDiscoveredProfiles(@CurrentUserId() userId: string) {
+    return this.peopleProfileDiscoverService.getAllDiscoveredProfiles(userId);
   }
 
   @Get(':id')
@@ -95,8 +100,11 @@ export class PeopleProfileDiscoverController {
     status: 404, 
     description: 'Profile not found' 
   })
-  async getDiscoveredProfileById(@Param('id') id: string) {
-    return this.peopleProfileDiscoverService.getDiscoveredProfileById(id);
+  async getDiscoveredProfileById(
+    @Param('id') id: string,
+    @CurrentUserId() userId: string
+  ) {
+    return this.peopleProfileDiscoverService.getDiscoveredProfileById(id, userId);
   }
 
   @Get('linkedin-id/:linkedinId')
@@ -112,8 +120,11 @@ export class PeopleProfileDiscoverController {
     status: 404,
     description: 'Profile not found'
   })
-  async getDiscoveredProfileByLinkedInId(@Param('linkedinId') linkedinId: string) {
-    return this.peopleProfileDiscoverService.getDiscoveredProfileByLinkedInId(linkedinId);
+  async getDiscoveredProfileByLinkedInId(
+    @Param('linkedinId') linkedinId: string,
+    @CurrentUserId() userId: string
+  ) {
+    return this.peopleProfileDiscoverService.getDiscoveredProfileByLinkedInId(linkedinId, userId);
   }
 
   @Get('search/:firstName/:lastName')
@@ -126,10 +137,11 @@ export class PeopleProfileDiscoverController {
     description: 'Search results retrieved successfully'
   })
   async searchByName(
-    @Param('firstName') firstName: string, 
-    @Param('lastName') lastName: string
+    @Param('firstName') firstName: string,
+    @Param('lastName') lastName: string,
+    @CurrentUserId() userId: string
   ) {
-    return this.peopleProfileDiscoverService.searchByName(firstName, lastName);
+    return this.peopleProfileDiscoverService.searchByName(firstName, lastName, userId);
   }
 
   @Get('snapshot/:snapshotId/status')
@@ -206,33 +218,49 @@ export class PeopleProfileDiscoverController {
     status: 502,
     description: 'BrightData API error'
   })
-  async getSnapshotData(@Param('snapshotId') snapshotId: string) {
-    return this.peopleProfileDiscoverService.getSnapshotData(snapshotId);
+  async getSnapshotData(
+    @Param('snapshotId') snapshotId: string,
+    @CurrentUserId() userId: string
+  ) {
+    return this.peopleProfileDiscoverService.getSnapshotData(snapshotId, userId);
   }
 
   // Keep legacy endpoints for compatibility
   @Post('create')
-  create(@Body() createPeopleProfileDiscoverDto: CreatePeopleProfileDiscoverDto) {
-    return this.peopleProfileDiscoverService.create(createPeopleProfileDiscoverDto);
+  create(
+    @Body() createPeopleProfileDiscoverDto: CreatePeopleProfileDiscoverDto,
+    @CurrentUserId() userId: string
+  ) {
+    return this.peopleProfileDiscoverService.create(createPeopleProfileDiscoverDto, userId);
   }
 
   @Get('all')
-  findAll() {
-    return this.peopleProfileDiscoverService.findAll();
+  findAll(@CurrentUserId() userId: string) {
+    return this.peopleProfileDiscoverService.findAll(userId);
   }
 
   @Get('findone/:id')
-  findOne(@Param('id') id: string) {
-    return this.peopleProfileDiscoverService.findOne(+id);
+  findOne(
+    @Param('id') id: string,
+    @CurrentUserId() userId: string
+  ) {
+    return this.peopleProfileDiscoverService.findOne(+id, userId);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updatePeopleProfileDiscoverDto: UpdatePeopleProfileDiscoverDto) {
-    return this.peopleProfileDiscoverService.update(+id, updatePeopleProfileDiscoverDto);
+  update(
+    @Param('id') id: string,
+    @Body() updatePeopleProfileDiscoverDto: UpdatePeopleProfileDiscoverDto,
+    @CurrentUserId() userId: string
+  ) {
+    return this.peopleProfileDiscoverService.update(+id, updatePeopleProfileDiscoverDto, userId);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.peopleProfileDiscoverService.remove(+id);
+  remove(
+    @Param('id') id: string,
+    @CurrentUserId() userId: string
+  ) {
+    return this.peopleProfileDiscoverService.remove(+id, userId);
   }
 }

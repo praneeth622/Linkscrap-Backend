@@ -1,9 +1,11 @@
 import { Controller, Post, Body, Get, Param, HttpCode, HttpStatus } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
+import { CurrentUserId } from '../../auth/decorators/user.decorator';
 import { JobListingCollectService } from './job-listing-collect.service';
 import { LinkedInJobUrlDto } from '../../brightdata/dto';
 
 @ApiTags('LinkedIn Job Listing - Collect')
+@ApiBearerAuth()
 @Controller('linkedin/job-listing/collect')
 export class JobListingCollectController {
   constructor(
@@ -60,8 +62,11 @@ export class JobListingCollectController {
     status: 502,
     description: 'BrightData API error'
   })
-  async collectJobListings(@Body() linkedInJobUrlDto: LinkedInJobUrlDto) {
-    return this.jobListingCollectService.collectJobListings(linkedInJobUrlDto);
+  async collectJobListings(
+    @Body() linkedInJobUrlDto: LinkedInJobUrlDto,
+    @CurrentUserId() userId: string
+  ) {
+    return this.jobListingCollectService.collectJobListings(linkedInJobUrlDto, userId);
   }
 
   @Get('snapshot/:snapshotId/status')
@@ -115,8 +120,11 @@ export class JobListingCollectController {
       }
     }
   })
-  async getSnapshotData(@Param('snapshotId') snapshotId: string) {
-    return this.jobListingCollectService.getSnapshotData(snapshotId);
+  async getSnapshotData(
+    @Param('snapshotId') snapshotId: string,
+    @CurrentUserId() userId: string
+  ) {
+    return this.jobListingCollectService.getSnapshotData(snapshotId, userId);
   }
 
   @Get()
@@ -128,8 +136,8 @@ export class JobListingCollectController {
     status: 200,
     description: 'Job listings retrieved successfully'
   })
-  async getAllJobListings() {
-    return this.jobListingCollectService.getAllJobListings();
+  async getAllJobListings(@CurrentUserId() userId: string) {
+    return this.jobListingCollectService.getAllJobListings(userId);
   }
 
   @Get(':id')
@@ -145,8 +153,11 @@ export class JobListingCollectController {
     status: 404,
     description: 'Job listing not found'
   })
-  async getJobListingById(@Param('id') id: string) {
-    return this.jobListingCollectService.getJobListingById(id);
+  async getJobListingById(
+    @Param('id') id: string,
+    @CurrentUserId() userId: string
+  ) {
+    return this.jobListingCollectService.getJobListingById(id, userId);
   }
 
   @Get('posting/:postingId')
@@ -162,7 +173,10 @@ export class JobListingCollectController {
     status: 404,
     description: 'Job listing not found'
   })
-  async getJobListingByPostingId(@Param('postingId') postingId: string) {
-    return this.jobListingCollectService.getJobListingByPostingId(postingId);
+  async getJobListingByPostingId(
+    @Param('postingId') postingId: string,
+    @CurrentUserId() userId: string
+  ) {
+    return this.jobListingCollectService.getJobListingByPostingId(postingId, userId);
   }
 }

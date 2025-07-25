@@ -1,9 +1,11 @@
 import { Controller, Post, Body, Get, Param, HttpCode, HttpStatus } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
+import { CurrentUserId } from '../../auth/decorators/user.decorator';
 import { PeopleProfileCollectService } from './people-profile-collect.service';
 import { LinkedInUrlDto } from '../../brightdata/dto';
 
 @ApiTags('LinkedIn People Profile - Collect')
+@ApiBearerAuth()
 @Controller('linkedin/people-profile/collect')
 export class PeopleProfileCollectController {
   constructor(
@@ -61,8 +63,11 @@ export class PeopleProfileCollectController {
     status: 502,
     description: 'BrightData API error'
   })
-  async collectProfiles(@Body() linkedInUrlDto: LinkedInUrlDto) {
-    return this.peopleProfileCollectService.collectProfiles(linkedInUrlDto);
+  async collectProfiles(
+    @Body() linkedInUrlDto: LinkedInUrlDto,
+    @CurrentUserId() userId: string
+  ) {
+    return this.peopleProfileCollectService.collectProfiles(linkedInUrlDto, userId);
   }
 
   @Get()
@@ -74,8 +79,8 @@ export class PeopleProfileCollectController {
     status: 200, 
     description: 'Profiles retrieved successfully' 
   })
-  async getAllProfiles() {
-    return this.peopleProfileCollectService.getAllProfiles();
+  async getAllProfiles(@CurrentUserId() userId: string) {
+    return this.peopleProfileCollectService.getAllProfiles(userId);
   }
 
   @Get(':id')
@@ -91,8 +96,11 @@ export class PeopleProfileCollectController {
     status: 404, 
     description: 'Profile not found' 
   })
-  async getProfileById(@Param('id') id: string) {
-    return this.peopleProfileCollectService.getProfileById(id);
+  async getProfileById(
+    @Param('id') id: string,
+    @CurrentUserId() userId: string
+  ) {
+    return this.peopleProfileCollectService.getProfileById(id, userId);
   }
 
   @Get('linkedin-id/:linkedinId')
@@ -108,8 +116,11 @@ export class PeopleProfileCollectController {
     status: 404,
     description: 'Profile not found'
   })
-  async getProfileByLinkedInId(@Param('linkedinId') linkedinId: string) {
-    return this.peopleProfileCollectService.getProfileByLinkedInId(linkedinId);
+  async getProfileByLinkedInId(
+    @Param('linkedinId') linkedinId: string,
+    @CurrentUserId() userId: string
+  ) {
+    return this.peopleProfileCollectService.getProfileByLinkedInId(linkedinId, userId);
   }
 
   @Get('snapshot/:snapshotId/status')
@@ -186,7 +197,10 @@ export class PeopleProfileCollectController {
     status: 502,
     description: 'BrightData API error'
   })
-  async getSnapshotData(@Param('snapshotId') snapshotId: string) {
-    return this.peopleProfileCollectService.getSnapshotData(snapshotId);
+  async getSnapshotData(
+    @Param('snapshotId') snapshotId: string,
+    @CurrentUserId() userId: string
+  ) {
+    return this.peopleProfileCollectService.getSnapshotData(snapshotId, userId);
   }
 }

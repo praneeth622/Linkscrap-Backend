@@ -22,7 +22,7 @@ export class PeopleSearchCollectService {
     private readonly peopleSearchRepository: Repository<LinkedInPeopleSearch>,
   ) {}
 
-  async collectPeopleSearch(requestDto: LinkedInPeopleSearchRequestDto): Promise<LinkedInPeopleSearchResponseDto> {
+  async collectPeopleSearch(requestDto: LinkedInPeopleSearchRequestDto, userId: string): Promise<LinkedInPeopleSearchResponseDto> {
     try {
       const datasetId = this.configService.get<string>('LINKEDIN_PEOPLE_SEARCH_COLLECT_DATASET_ID');
 
@@ -66,7 +66,7 @@ export class PeopleSearchCollectService {
 
       // If we got direct data (sync operation), process and save it
       if (Array.isArray(brightDataResponse)) {
-        const savedPeople = await this.processBrightDataResponse(brightDataResponse, requestDto.searches);
+        const savedPeople = await this.processBrightDataResponse(brightDataResponse, requestDto.searches, userId);
         
         return {
           success: true,
@@ -94,13 +94,13 @@ export class PeopleSearchCollectService {
     }
   }
 
-  async getSnapshotData(snapshotId: string) {
+  async getSnapshotData(snapshotId: string, userId: string) {
     try {
       const data = await this.brightdataService.getSnapshotData(snapshotId);
       
       if (Array.isArray(data) && data.length > 0) {
         // Process and save the data
-        const savedPeople = await this.processBrightDataResponse(data, []);
+        const savedPeople = await this.processBrightDataResponse(data, [], userId);
         this.logger.log(`Processed and saved ${savedPeople.length} people from snapshot ${snapshotId}`);
         return savedPeople;
       }
@@ -112,7 +112,7 @@ export class PeopleSearchCollectService {
     }
   }
 
-  private async processBrightDataResponse(data: any[], searchCriteria: any[]): Promise<LinkedInPeopleSearch[]> {
+  private async processBrightDataResponse(data: any[], searchCriteria: any[], userId: string): Promise<LinkedInPeopleSearch[]> {
     const savedPeople: LinkedInPeopleSearch[] = [];
 
     for (const [index, personData] of data.entries()) {
@@ -132,6 +132,7 @@ export class PeopleSearchCollectService {
 
         // Create new person entity
         const person = this.peopleSearchRepository.create({
+          user_id: userId,
           name: personData.name,
           subtitle: personData.subtitle,
           location: personData.location,
@@ -158,8 +159,9 @@ export class PeopleSearchCollectService {
     return savedPeople;
   }
 
-  async findAll(page: number = 1, limit: number = 10): Promise<PaginatedLinkedInPeopleDto> {
+  async findAll(page: number = 1, limit: number = 10, userId: string): Promise<PaginatedLinkedInPeopleDto> {
     const [people, total] = await this.peopleSearchRepository.findAndCount({
+      where: { user_id: userId },
       order: { created_at: 'DESC' },
       skip: (page - 1) * limit,
       take: limit

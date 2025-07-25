@@ -1,9 +1,14 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
 
 @Entity('people_profiles_discovered')
+@Index(['user_id', 'created_at'])
 export class PeopleProfileDiscover {
   @PrimaryGeneratedColumn('uuid')
   id: string;
+
+  @Column('uuid', { nullable: true })
+  @Index()
+  user_id: string;
 
   @Column()
   linkedin_num_id: string;

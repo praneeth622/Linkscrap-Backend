@@ -1,8 +1,11 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { APP_GUARD } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { AuthModule } from './auth/auth.module';
+import { AuthGuard } from './auth/auth.guard';
 import { PeopleProfileCollectModule } from './linkedin/people-profile-collect/people-profile-collect.module';
 import { PeopleProfileDiscoverModule } from './linkedin/people-profile-discover/people-profile-discover.module';
 import { CompanyInfoCollectModule } from './linkedin/company-info-collect/company-info-collect.module';
@@ -27,19 +30,28 @@ import { PeopleSearchCollectModule } from './linkedin/people-search-collect/peop
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
       synchronize: true, // Set to false in production
     }),
-    PeopleProfileCollectModule,
-    PeopleProfileDiscoverModule,
-    CompanyInfoCollectModule,
-    JobListingCollectModule,
-    JobListingDiscoverKeywordModule,
-    JobListingDiscoverUrlModule,
-    PostCollectModule,
-    PostDiscoverCompanyModule,
-    PostDiscoverProfileModule,
-    PostDiscoverUrlModule,
-    PeopleSearchCollectModule,
+    // AuthModule, // Temporarily disabled - causing startup hang
+    // Temporarily disabled all LinkedIn modules to isolate issue
+    // PostDiscoverUrlModule,
+    // PeopleProfileCollectModule,
+    // PeopleProfileDiscoverModule,
+    // CompanyInfoCollectModule,
+    // JobListingCollectModule,
+    // JobListingDiscoverKeywordModule,
+    // JobListingDiscoverUrlModule,
+    // PostCollectModule,
+    // PostDiscoverCompanyModule,
+    // PostDiscoverProfileModule,
+    // PeopleSearchCollectModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    // Temporarily disabled - causing startup hang
+    // {
+    //   provide: APP_GUARD,
+    //   useClass: AuthGuard,
+    // },
+  ],
 })
 export class AppModule {}

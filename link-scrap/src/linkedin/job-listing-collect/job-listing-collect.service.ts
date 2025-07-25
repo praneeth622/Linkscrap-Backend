@@ -17,7 +17,7 @@ export class JobListingCollectService {
     private readonly jobListingRepository: Repository<JobListing>,
   ) {}
 
-  async collectJobListings(linkedInJobUrlDto: LinkedInJobUrlDto) {
+  async collectJobListings(linkedInJobUrlDto: LinkedInJobUrlDto, userId: string) {
     try {
       const datasetId = this.configService.get<string>('JOB_LISTING_COLLECT_DATASET_ID');
 
@@ -59,7 +59,7 @@ export class JobListingCollectService {
         this.logger.log(`Received direct response with ${brightDataResponse.length} job listings`);
 
         // Save job listings to database
-        const savedJobListings = await this.saveJobListingsToDatabase(brightDataResponse);
+        const savedJobListings = await this.saveJobListingsToDatabase(brightDataResponse, userId);
 
         return {
           success: true,
@@ -74,7 +74,7 @@ export class JobListingCollectService {
         this.logger.log(`Received response with data property containing ${brightDataResponse.data.length} job listings`);
 
         // Save job listings to database
-        const savedJobListings = await this.saveJobListingsToDatabase(brightDataResponse.data);
+        const savedJobListings = await this.saveJobListingsToDatabase(brightDataResponse.data, userId);
 
         return {
           success: true,
@@ -159,16 +159,17 @@ export class JobListingCollectService {
   /**
    * Save job listings to database
    */
-  private async saveJobListingsToDatabase(jobListingsData: any[]): Promise<JobListing[]> {
+  private async saveJobListingsToDatabase(jobListingsData: any[], userId: string): Promise<JobListing[]> {
     const savedJobListings: JobListing[] = [];
 
     for (const jobData of jobListingsData) {
       try {
-        // Check if job listing already exists
+        // Check if job listing already exists for this user
         const existingJobListing = await this.jobListingRepository.findOne({
           where: {
             job_posting_id: jobData.job_posting_id || jobData.id?.toString(),
-            url: jobData.url || jobData.input_url
+            url: jobData.url || jobData.input_url,
+            user_id: userId
           },
         });
 
@@ -179,6 +180,10 @@ export class JobListingCollectService {
 
         // Map and save new job listing
         const mappedJobData = this.mapJobListingData(jobData);
+
+        // Add user_id to the mapped job data
+        mappedJobData.user_id = userId;
+
         const jobListing = this.jobListingRepository.create(mappedJobData);
         const savedJobListing = await this.jobListingRepository.save(jobListing);
 
@@ -230,19 +235,20 @@ export class JobListingCollectService {
     };
   }
 
-  async getAllJobListings() {
+  async getAllJobListings(userId: string) {
     return this.jobListingRepository.find({
+      where: { user_id: userId },
       order: { created_at: 'DESC' },
     });
   }
 
-  async getJobListingById(id: string) {
-    return this.jobListingRepository.findOne({ where: { id } });
+  async getJobListingById(id: string, userId: string) {
+    return this.jobListingRepository.findOne({ where: { id, user_id: userId } });
   }
 
-  async getJobListingByPostingId(postingId: string) {
+  async getJobListingByPostingId(postingId: string, userId: string) {
     return this.jobListingRepository.findOne({
-      where: { job_posting_id: postingId },
+      where: { job_posting_id: postingId, user_id: userId },
     });
   }
 
@@ -263,7 +269,7 @@ export class JobListingCollectService {
     }
   }
 
-  async getSnapshotData(snapshotId: string) {
+  async getSnapshotData(snapshotId: string, userId: string) {
     try {
       // Check snapshot status first
       const progress = await this.brightdataService.monitorProgress(snapshotId);
@@ -284,7 +290,7 @@ export class JobListingCollectService {
       const jobListingsData = this.extractJobListingsFromResponse(snapshotData);
 
       // Save job listings to database
-      const savedJobListings = await this.saveJobListingsToDatabase(jobListingsData);
+      const savedJobListings = await this.saveJobListingsToDatabase(jobListingsData, userId);
 
       this.logger.log(`Successfully processed ${savedJobListings.length} job listings from snapshot ${snapshotId}`);
 

@@ -2,9 +2,14 @@ import { Entity, Column, Index } from 'typeorm';
 import { BaseEntity } from '../../../entities/base.entity';
 
 @Entity('company_info')
-@Index(['company_id'], { unique: true })
+@Index(['user_id', 'createdAt'])
+@Index(['user_id', 'company_id'], { unique: true })
 export class CompanyInfoEntity extends BaseEntity {
-  @Column({ type: 'varchar', unique: true })
+  @Column('uuid', { nullable: true })
+  @Index()
+  user_id: string;
+
+  @Column({ type: 'varchar' })
   company_id: string;
 
   @Column({ type: 'varchar' })

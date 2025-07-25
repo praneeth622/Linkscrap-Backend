@@ -1,9 +1,11 @@
 import { Controller, Get, Post, Body, Param, Delete, HttpCode, HttpStatus } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBearerAuth } from '@nestjs/swagger';
+import { CurrentUserId } from '../../auth/decorators/user.decorator';
 import { CompanyInfoCollectService } from './company-info-collect.service';
 import { CompanyUrlDto } from '../../brightdata/dto';
 
 @ApiTags('LinkedIn Company Information Collection')
+@ApiBearerAuth()
 @Controller('linkedin/company-info/collect')
 export class CompanyInfoCollectController {
   constructor(private readonly companyInfoCollectService: CompanyInfoCollectService) {}
@@ -54,8 +56,11 @@ export class CompanyInfoCollectController {
     status: 500,
     description: 'Internal server error during data collection'
   })
-  async collectCompanyInfo(@Body() companyUrlDto: CompanyUrlDto) {
-    return this.companyInfoCollectService.collectCompanyInfo(companyUrlDto);
+  async collectCompanyInfo(
+    @Body() companyUrlDto: CompanyUrlDto,
+    @CurrentUserId() userId: string
+  ) {
+    return this.companyInfoCollectService.collectCompanyInfo(companyUrlDto, userId);
   }
 
   @Get()
@@ -67,8 +72,8 @@ export class CompanyInfoCollectController {
     status: 200,
     description: 'Successfully retrieved company information records'
   })
-  async findAll() {
-    return this.companyInfoCollectService.findAll();
+  async findAll(@CurrentUserId() userId: string) {
+    return this.companyInfoCollectService.findAll(userId);
   }
 
   @Get('company/:companyId')
@@ -85,8 +90,11 @@ export class CompanyInfoCollectController {
     status: 404,
     description: 'Company not found'
   })
-  async findByCompanyId(@Param('companyId') companyId: string) {
-    return this.companyInfoCollectService.findByCompanyId(companyId);
+  async findByCompanyId(
+    @Param('companyId') companyId: string,
+    @CurrentUserId() userId: string
+  ) {
+    return this.companyInfoCollectService.findByCompanyId(companyId, userId);
   }
 
   @Get('url/:encodedUrl')
@@ -99,9 +107,12 @@ export class CompanyInfoCollectController {
     status: 200,
     description: 'Successfully retrieved company information records'
   })
-  async findByUrl(@Param('encodedUrl') encodedUrl: string) {
+  async findByUrl(
+    @Param('encodedUrl') encodedUrl: string,
+    @CurrentUserId() userId: string
+  ) {
     const url = decodeURIComponent(encodedUrl);
-    return this.companyInfoCollectService.findByUrl(url);
+    return this.companyInfoCollectService.findByUrl(url, userId);
   }
 
   @Get(':id')
@@ -118,8 +129,11 @@ export class CompanyInfoCollectController {
     status: 404,
     description: 'Company information record not found'
   })
-  async findOne(@Param('id') id: string) {
-    return this.companyInfoCollectService.findOne(id);
+  async findOne(
+    @Param('id') id: string,
+    @CurrentUserId() userId: string
+  ) {
+    return this.companyInfoCollectService.findOne(id, userId);
   }
 
   @Delete(':id')
@@ -136,8 +150,11 @@ export class CompanyInfoCollectController {
     status: 404, 
     description: 'Company information record not found' 
   })
-  async remove(@Param('id') id: string) {
-    const deleted = await this.companyInfoCollectService.remove(id);
+  async remove(
+    @Param('id') id: string,
+    @CurrentUserId() userId: string
+  ) {
+    const deleted = await this.companyInfoCollectService.remove(id, userId);
     return {
       success: deleted,
       message: deleted ? 'Company information deleted successfully' : 'Company information not found'

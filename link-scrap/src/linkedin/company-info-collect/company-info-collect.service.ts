@@ -15,7 +15,7 @@ export class CompanyInfoCollectService {
     private brightdataService: BrightdataService,
   ) {}
 
-  async collectCompanyInfo(companyUrlDto: CompanyUrlDto) {
+  async collectCompanyInfo(companyUrlDto: CompanyUrlDto, userId: string) {
     this.logger.log('Starting company info collection for URLs: ' + JSON.stringify(companyUrlDto.urls));
 
     const datasetId = 'gd_l1vikfnt1wgvvqz95w'; // BrightData Company Information dataset ID
@@ -38,7 +38,7 @@ export class CompanyInfoCollectService {
         const companyData = await this.waitForDataAndRetrieve(brightdataResponse.snapshot_id);
 
         // Save companies to database
-        const savedCompanies = await this.saveCompaniesToDatabase(companyData, companyUrlDto.urls);
+        const savedCompanies = await this.saveCompaniesToDatabase(companyData, companyUrlDto.urls, userId);
 
         this.logger.log(`Successfully processed ${savedCompanies.length} companies`);
 
@@ -56,7 +56,7 @@ export class CompanyInfoCollectService {
         this.logger.log(`Received direct response with ${brightdataResponse.length} companies`);
 
         // Save companies to database
-        const savedCompanies = await this.saveCompaniesToDatabase(brightdataResponse, companyUrlDto.urls);
+        const savedCompanies = await this.saveCompaniesToDatabase(brightdataResponse, companyUrlDto.urls, userId);
 
         return {
           success: true,
@@ -71,7 +71,7 @@ export class CompanyInfoCollectService {
         this.logger.log(`Received response with data property containing ${brightdataResponse.data.length} companies`);
 
         // Save companies to database
-        const savedCompanies = await this.saveCompaniesToDatabase(brightdataResponse.data, companyUrlDto.urls);
+        const savedCompanies = await this.saveCompaniesToDatabase(brightdataResponse.data, companyUrlDto.urls, userId);
 
         return {
           success: true,
@@ -210,7 +210,7 @@ export class CompanyInfoCollectService {
     return [];
   }
 
-  private async saveCompaniesToDatabase(companies: any[], originalUrls: string[]): Promise<CompanyInfoEntity[]> {
+  private async saveCompaniesToDatabase(companies: any[], originalUrls: string[], userId: string): Promise<CompanyInfoEntity[]> {
     const savedCompanies: CompanyInfoEntity[] = [];
 
     if (!Array.isArray(companies)) {
@@ -235,9 +235,12 @@ export class CompanyInfoCollectService {
         // Map BrightData response to database entity format
         const mappedCompany = this.mapCompanyData(companyData, originalUrls);
 
-        // Check if company already exists
+        // Add user_id to the mapped company
+        mappedCompany.user_id = userId;
+
+        // Check if company already exists for this user
         const existingCompany = await this.companyInfoRepository.findOne({
-          where: { company_id: mappedCompany.company_id },
+          where: { company_id: mappedCompany.company_id, user_id: userId },
         });
 
         if (existingCompany) {
@@ -310,33 +313,34 @@ export class CompanyInfoCollectService {
     };
   }
 
-  async findAll() {
+  async findAll(userId: string) {
     return this.companyInfoRepository.find({
+      where: { user_id: userId },
       order: { createdAt: 'DESC' },
     });
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, userId: string) {
     return this.companyInfoRepository.findOne({
-      where: { id },
+      where: { id, user_id: userId },
     });
   }
 
-  async findByCompanyId(companyId: string) {
+  async findByCompanyId(companyId: string, userId: string) {
     return this.companyInfoRepository.findOne({
-      where: { company_id: companyId },
+      where: { company_id: companyId, user_id: userId },
     });
   }
 
-  async findByUrl(url: string) {
+  async findByUrl(url: string, userId: string) {
     return this.companyInfoRepository.find({
-      where: { original_request_url: url },
+      where: { original_request_url: url, user_id: userId },
       order: { createdAt: 'DESC' },
     });
   }
 
-  async remove(id: string) {
-    const result = await this.companyInfoRepository.delete(id);
+  async remove(id: string, userId: string) {
+    const result = await this.companyInfoRepository.delete({ id, user_id: userId });
     return result.affected ? result.affected > 0 : false;
   }
 

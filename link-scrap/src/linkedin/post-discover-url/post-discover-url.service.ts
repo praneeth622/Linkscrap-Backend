@@ -21,7 +21,7 @@ export class PostDiscoverUrlService {
     private readonly postRepository: Repository<LinkedInPostDiscoverUrl>,
   ) {}
 
-  async discoverPosts(requestDto: LinkedInPostDiscoverUrlRequestDto): Promise<LinkedInPostDiscoverUrlResponseDto> {
+  async discoverPosts(requestDto: LinkedInPostDiscoverUrlRequestDto, userId: string): Promise<LinkedInPostDiscoverUrlResponseDto> {
     try {
       const datasetId = this.configService.get<string>('LINKEDIN_POST_DISCOVER_URL_DATASET_ID');
 
@@ -66,7 +66,7 @@ export class PostDiscoverUrlService {
 
       // If we got direct data (sync operation), process and save it
       if (Array.isArray(brightDataResponse)) {
-        const savedPosts = await this.processBrightDataResponse(brightDataResponse, requestDto.urls[0]?.url || '');
+        const savedPosts = await this.processBrightDataResponse(brightDataResponse, requestDto.urls[0]?.url || '', userId);
 
         return {
           success: true,
@@ -94,13 +94,13 @@ export class PostDiscoverUrlService {
     }
   }
 
-  async getSnapshotData(snapshotId: string) {
+  async getSnapshotData(snapshotId: string, userId: string) {
     try {
       const data = await this.brightdataService.getSnapshotData(snapshotId);
 
       if (Array.isArray(data) && data.length > 0) {
         // Process and save the data
-        const savedPosts = await this.processBrightDataResponse(data, '');
+        const savedPosts = await this.processBrightDataResponse(data, '', userId);
         this.logger.log(`Processed and saved ${savedPosts.length} posts from snapshot ${snapshotId}`);
         return savedPosts;
       }
@@ -112,14 +112,14 @@ export class PostDiscoverUrlService {
     }
   }
 
-  private async processBrightDataResponse(data: any[], inputUrl: string): Promise<LinkedInPostDiscoverUrl[]> {
+  private async processBrightDataResponse(data: any[], inputUrl: string, userId: string): Promise<LinkedInPostDiscoverUrl[]> {
     const savedPosts: LinkedInPostDiscoverUrl[] = [];
 
     for (const postData of data) {
       try {
-        // Check if post already exists
+        // Check if post already exists for this user
         const existingPost = await this.postRepository.findOne({
-          where: { linkedin_post_id: postData.id }
+          where: { linkedin_post_id: postData.id, user_id: userId }
         });
 
         if (existingPost) {
@@ -131,7 +131,7 @@ export class PostDiscoverUrlService {
         const post = this.postRepository.create({
           linkedin_post_id: postData.id,
           url: postData.url,
-          user_id: postData.user_id,
+          user_id: userId,
           use_url: postData.use_url,
           post_type: postData.post_type,
           date_posted: postData.date_posted ? new Date(postData.date_posted) : null,
@@ -179,8 +179,9 @@ export class PostDiscoverUrlService {
     return savedPosts;
   }
 
-  async findAll(page: number = 1, limit: number = 10): Promise<PaginatedLinkedInPostsDto> {
+  async findAll(page: number = 1, limit: number = 10, userId: string): Promise<PaginatedLinkedInPostsDto> {
     const [posts, total] = await this.postRepository.findAndCount({
+      where: { user_id: userId },
       order: { date_posted: 'DESC', created_at: 'DESC' },
       skip: (page - 1) * limit,
       take: limit
@@ -201,9 +202,9 @@ export class PostDiscoverUrlService {
     };
   }
 
-  async findByUrl(url: string): Promise<LinkedInPostDiscoverUrl[]> {
+  async findByUrl(url: string, userId: string): Promise<LinkedInPostDiscoverUrl[]> {
     return this.postRepository.find({
-      where: { input_url: url },
+      where: { input_url: url, user_id: userId },
       order: { date_posted: 'DESC', created_at: 'DESC' }
     });
   }

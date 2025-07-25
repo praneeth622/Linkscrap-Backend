@@ -1,15 +1,17 @@
 import { Controller, Post, Body, Get, Param, Query, Patch, Delete, HttpCode, HttpStatus } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiParam, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiParam, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
+import { CurrentUserId } from '../../auth/decorators/user.decorator';
 import { PeopleSearchCollectService } from './people-search-collect.service';
-import { 
-  LinkedInPeopleSearchRequestDto, 
+import {
+  LinkedInPeopleSearchRequestDto,
   LinkedInPeopleSearchResponseDto,
   PaginatedLinkedInPeopleDto,
   LinkedInPersonDto,
-  SearchCriteriaDto 
+  SearchCriteriaDto
 } from './dto/linkedin-people-search-collect.dto';
 
 @ApiTags('LinkedIn People Search - Collect by URL')
+@ApiBearerAuth()
 @Controller('linkedin/people-search-collect')
 export class PeopleSearchCollectController {
   constructor(private readonly peopleSearchCollectService: PeopleSearchCollectService) {}
@@ -97,8 +99,11 @@ export class PeopleSearchCollectController {
       }
     }
   })
-  async collectPeopleSearch(@Body() requestDto: LinkedInPeopleSearchRequestDto): Promise<LinkedInPeopleSearchResponseDto> {
-    return this.peopleSearchCollectService.collectPeopleSearch(requestDto);
+  async collectPeopleSearch(
+    @Body() requestDto: LinkedInPeopleSearchRequestDto,
+    @CurrentUserId() userId: string
+  ): Promise<LinkedInPeopleSearchResponseDto> {
+    return this.peopleSearchCollectService.collectPeopleSearch(requestDto, userId);
   }
 
   @Get('snapshot/:snapshotId/status')
@@ -163,8 +168,11 @@ export class PeopleSearchCollectController {
       }
     }
   })
-  async getSnapshotData(@Param('snapshotId') snapshotId: string) {
-    return this.peopleSearchCollectService.getSnapshotData(snapshotId);
+  async getSnapshotData(
+    @Param('snapshotId') snapshotId: string,
+    @CurrentUserId() userId: string
+  ) {
+    return this.peopleSearchCollectService.getSnapshotData(snapshotId, userId);
   }
 
   @Get()
@@ -191,11 +199,12 @@ export class PeopleSearchCollectController {
   })
   async findAll(
     @Query('page') page: string = '1',
-    @Query('limit') limit: string = '10'
+    @Query('limit') limit: string = '10',
+    @CurrentUserId() userId: string
   ): Promise<PaginatedLinkedInPeopleDto> {
     const pageNum = Math.max(1, parseInt(page, 10) || 1);
     const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 10));
-    return this.peopleSearchCollectService.findAll(pageNum, limitNum);
+    return this.peopleSearchCollectService.findAll(pageNum, limitNum, userId);
   }
 
   @Get('search')

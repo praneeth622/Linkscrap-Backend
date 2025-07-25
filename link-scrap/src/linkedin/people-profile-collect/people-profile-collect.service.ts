@@ -17,7 +17,7 @@ export class PeopleProfileCollectService {
     private readonly peopleProfileRepository: Repository<PeopleProfile>,
   ) {}
 
-  async collectProfiles(linkedInUrlDto: LinkedInUrlDto) {
+  async collectProfiles(linkedInUrlDto: LinkedInUrlDto, userId: string) {
     try {
       const datasetId = this.configService.get<string>('PEOPLE_PROFILE_COLLECT_DATASET_ID');
 
@@ -55,7 +55,7 @@ export class PeopleProfileCollectService {
       } else {
         // Handle direct response (if any)
         const profilesData = this.extractProfilesFromResponse(brightDataResponse);
-        const savedProfiles = await this.saveProfilesToDatabase(profilesData);
+        const savedProfiles = await this.saveProfilesToDatabase(profilesData, userId);
 
         this.logger.log(`Successfully processed ${savedProfiles.length} profiles`);
 
@@ -167,7 +167,7 @@ export class PeopleProfileCollectService {
     return [];
   }
 
-  private async saveProfilesToDatabase(profiles: any[]): Promise<PeopleProfile[]> {
+  private async saveProfilesToDatabase(profiles: any[], userId: string): Promise<PeopleProfile[]> {
     const savedProfiles: PeopleProfile[] = [];
 
     if (!Array.isArray(profiles)) {
@@ -192,9 +192,12 @@ export class PeopleProfileCollectService {
         // Map BrightData response to database entity format
         const mappedProfile = this.mapProfileData(profileData);
 
-        // Check if profile already exists
+        // Add user_id to the mapped profile
+        mappedProfile.user_id = userId;
+
+        // Check if profile already exists for this user
         const existingProfile = await this.peopleProfileRepository.findOne({
-          where: { linkedin_num_id: mappedProfile.linkedin_num_id },
+          where: { linkedin_num_id: mappedProfile.linkedin_num_id, user_id: userId },
         });
 
         if (existingProfile) {
@@ -271,19 +274,20 @@ export class PeopleProfileCollectService {
     };
   }
 
-  async getAllProfiles() {
+  async getAllProfiles(userId: string) {
     return this.peopleProfileRepository.find({
+      where: { user_id: userId },
       order: { created_at: 'DESC' },
     });
   }
 
-  async getProfileById(id: string) {
-    return this.peopleProfileRepository.findOne({ where: { id } });
+  async getProfileById(id: string, userId: string) {
+    return this.peopleProfileRepository.findOne({ where: { id, user_id: userId } });
   }
 
-  async getProfileByLinkedInId(linkedinId: string) {
+  async getProfileByLinkedInId(linkedinId: string, userId: string) {
     return this.peopleProfileRepository.findOne({
-      where: { linkedin_id: linkedinId },
+      where: { linkedin_num_id: linkedinId, user_id: userId },
     });
   }
 
@@ -304,7 +308,7 @@ export class PeopleProfileCollectService {
     }
   }
 
-  async getSnapshotData(snapshotId: string) {
+  async getSnapshotData(snapshotId: string, userId: string) {
     try {
       // First check if the snapshot is ready
       const progress = await this.brightdataService.monitorProgress(snapshotId);
@@ -325,7 +329,7 @@ export class PeopleProfileCollectService {
       const profilesData = this.extractProfilesFromResponse(snapshotData);
 
       // Save profiles to database
-      const savedProfiles = await this.saveProfilesToDatabase(profilesData);
+      const savedProfiles = await this.saveProfilesToDatabase(profilesData, userId);
 
       this.logger.log(`Successfully processed ${savedProfiles.length} profiles from snapshot ${snapshotId}`);
 

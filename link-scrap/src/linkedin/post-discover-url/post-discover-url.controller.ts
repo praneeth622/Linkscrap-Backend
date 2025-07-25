@@ -1,5 +1,6 @@
 import { Controller, Post, Body, Get, Param, Query, HttpCode, HttpStatus } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiParam, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiParam, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
+import { CurrentUserId } from '../../auth/decorators/user.decorator';
 import { PostDiscoverUrlService } from './post-discover-url.service';
 import {
   LinkedInPostDiscoverUrlRequestDto,
@@ -9,6 +10,7 @@ import {
 } from './dto/linkedin-post-discover-url.dto';
 
 @ApiTags('LinkedIn Posts - Discover by URL')
+@ApiBearerAuth()
 @Controller('linkedin/post-discover-url')
 export class PostDiscoverUrlController {
   constructor(private readonly postDiscoverUrlService: PostDiscoverUrlService) {}
@@ -92,8 +94,11 @@ export class PostDiscoverUrlController {
       }
     }
   })
-  async discoverPosts(@Body() requestDto: LinkedInPostDiscoverUrlRequestDto): Promise<LinkedInPostDiscoverUrlResponseDto> {
-    return this.postDiscoverUrlService.discoverPosts(requestDto);
+  async discoverPosts(
+    @Body() requestDto: LinkedInPostDiscoverUrlRequestDto,
+    @CurrentUserId() userId: string
+  ): Promise<LinkedInPostDiscoverUrlResponseDto> {
+    return this.postDiscoverUrlService.discoverPosts(requestDto, userId);
   }
 
   @Get('snapshot/:snapshotId/status')
@@ -158,8 +163,11 @@ export class PostDiscoverUrlController {
       }
     }
   })
-  async getSnapshotData(@Param('snapshotId') snapshotId: string) {
-    return this.postDiscoverUrlService.getSnapshotData(snapshotId);
+  async getSnapshotData(
+    @Param('snapshotId') snapshotId: string,
+    @CurrentUserId() userId: string
+  ) {
+    return this.postDiscoverUrlService.getSnapshotData(snapshotId, userId);
   }
 
   @Get()
@@ -186,11 +194,12 @@ export class PostDiscoverUrlController {
   })
   async findAll(
     @Query('page') page: string = '1',
-    @Query('limit') limit: string = '10'
+    @Query('limit') limit: string = '10',
+    @CurrentUserId() userId: string
   ): Promise<PaginatedLinkedInPostsDto> {
     const pageNum = Math.max(1, parseInt(page, 10) || 1);
     const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 10));
-    return this.postDiscoverUrlService.findAll(pageNum, limitNum);
+    return this.postDiscoverUrlService.findAll(pageNum, limitNum, userId);
   }
 
   @Get('url/:encodedUrl')
@@ -208,9 +217,12 @@ export class PostDiscoverUrlController {
     description: 'Posts retrieved successfully',
     type: [LinkedInPostDto]
   })
-  async findByUrl(@Param('encodedUrl') encodedUrl: string): Promise<LinkedInPostDto[]> {
+  async findByUrl(
+    @Param('encodedUrl') encodedUrl: string,
+    @CurrentUserId() userId: string
+  ): Promise<LinkedInPostDto[]> {
     const decodedUrl = decodeURIComponent(encodedUrl);
-    const posts = await this.postDiscoverUrlService.findByUrl(decodedUrl);
+    const posts = await this.postDiscoverUrlService.findByUrl(decodedUrl, userId);
     return posts.map(post => ({
       ...post,
       date_posted: post.date_posted ? post.date_posted.toISOString() : undefined

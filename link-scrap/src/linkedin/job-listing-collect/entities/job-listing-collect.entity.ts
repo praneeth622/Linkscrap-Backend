@@ -1,9 +1,14 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
 
 @Entity('job_listings')
+@Index(['user_id', 'created_at'])
 export class JobListing {
   @PrimaryGeneratedColumn('uuid')
   id: string;
+
+  @Column('uuid', { nullable: true })
+  @Index()
+  user_id: string;
 
   @Column()
   url: string;
