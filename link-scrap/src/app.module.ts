@@ -30,28 +30,26 @@ import { PeopleSearchCollectModule } from './linkedin/people-search-collect/peop
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
       synchronize: true, // Set to false in production
     }),
-    // AuthModule, // Temporarily disabled - causing startup hang
-    // Temporarily disabled all LinkedIn modules to isolate issue
-    // PostDiscoverUrlModule,
-    // PeopleProfileCollectModule,
-    // PeopleProfileDiscoverModule,
-    // CompanyInfoCollectModule,
-    // JobListingCollectModule,
-    // JobListingDiscoverKeywordModule,
-    // JobListingDiscoverUrlModule,
-    // PostCollectModule,
-    // PostDiscoverCompanyModule,
-    // PostDiscoverProfileModule,
-    // PeopleSearchCollectModule,
+    AuthModule,
+    PostDiscoverUrlModule,
+    PeopleProfileCollectModule,
+    PeopleProfileDiscoverModule,
+    CompanyInfoCollectModule,
+    JobListingCollectModule,
+    JobListingDiscoverKeywordModule,
+    JobListingDiscoverUrlModule,
+    PostCollectModule,
+    PostDiscoverCompanyModule,
+    PostDiscoverProfileModule,
+    PeopleSearchCollectModule,
   ],
   controllers: [AppController],
   providers: [
     AppService,
-    // Temporarily disabled - causing startup hang
-    // {
-    //   provide: APP_GUARD,
-    //   useClass: AuthGuard,
-    // },
+    {
+      provide: APP_GUARD,
+      useClass: AuthGuard,
+    },
   ],
 })
 export class AppModule {}
