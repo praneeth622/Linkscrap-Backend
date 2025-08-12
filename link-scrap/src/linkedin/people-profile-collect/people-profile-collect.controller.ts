@@ -3,6 +3,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiBearerAuth } from '@nes
 import { CurrentUserId } from '../../auth/decorators/user.decorator';
 import { PeopleProfileCollectService } from './people-profile-collect.service';
 import { LinkedInUrlDto } from '../../brightdata/dto';
+import { DataCollectionRateLimit, DataRetrievalRateLimit } from '../../common/decorators/rate-limit.decorator';
 
 @ApiTags('LinkedIn People Profile - Collect')
 @ApiBearerAuth()
@@ -14,9 +15,10 @@ export class PeopleProfileCollectController {
 
   @Post()
   @HttpCode(HttpStatus.OK)
+  @DataCollectionRateLimit()
   @ApiOperation({
     summary: 'Collect LinkedIn profiles by URLs',
-    description: 'Trigger data collection for LinkedIn profiles using BrightData API. Returns a snapshot_id for async processing.'
+    description: 'Trigger data collection for LinkedIn profiles using BrightData API. Returns a snapshot_id for async processing. Rate limited to 10 requests per hour per user.'
   })
   @ApiBody({
     type: LinkedInUrlDto,
@@ -71,9 +73,10 @@ export class PeopleProfileCollectController {
   }
 
   @Get()
+  @DataRetrievalRateLimit()
   @ApiOperation({ 
     summary: 'Get all collected profiles',
-    description: 'Retrieve all LinkedIn profiles stored in the database'
+    description: 'Retrieve all LinkedIn profiles stored in the database. Rate limited to 100 requests per hour per user.'
   })
   @ApiResponse({ 
     status: 200, 
@@ -84,9 +87,10 @@ export class PeopleProfileCollectController {
   }
 
   @Get(':id')
+  @DataRetrievalRateLimit()
   @ApiOperation({ 
     summary: 'Get profile by ID',
-    description: 'Retrieve a specific LinkedIn profile by its database ID'
+    description: 'Retrieve a specific LinkedIn profile by its database ID. Rate limited to 100 requests per hour per user.'
   })
   @ApiResponse({ 
     status: 200, 
@@ -104,9 +108,10 @@ export class PeopleProfileCollectController {
   }
 
   @Get('linkedin-id/:linkedinId')
+  @DataRetrievalRateLimit()
   @ApiOperation({
     summary: 'Get profile by LinkedIn ID',
-    description: 'Retrieve a specific LinkedIn profile by its LinkedIn ID'
+    description: 'Retrieve a specific LinkedIn profile by its LinkedIn ID. Rate limited to 100 requests per hour per user.'
   })
   @ApiResponse({
     status: 200,
@@ -124,9 +129,10 @@ export class PeopleProfileCollectController {
   }
 
   @Get('snapshot/:snapshotId/status')
+  @DataRetrievalRateLimit()
   @ApiOperation({
     summary: 'Check snapshot status',
-    description: 'Check the status of a BrightData snapshot collection. Possible statuses: running, completed, ready, failed, error'
+    description: 'Check the status of a BrightData snapshot collection. Possible statuses: running, completed, ready, failed, error. Rate limited to 100 requests per hour per user.'
   })
   @ApiResponse({
     status: 200,
@@ -150,9 +156,10 @@ export class PeopleProfileCollectController {
   }
 
   @Get('snapshot/:snapshotId/data')
+  @DataRetrievalRateLimit()
   @ApiOperation({
     summary: 'Get snapshot data',
-    description: 'Retrieve the actual profile data from a completed BrightData snapshot. Only works when status is "completed" or "ready".'
+    description: 'Retrieve the actual profile data from a completed BrightData snapshot. Only works when status is "completed" or "ready". Rate limited to 100 requests per hour per user.'
   })
   @ApiResponse({
     status: 200,

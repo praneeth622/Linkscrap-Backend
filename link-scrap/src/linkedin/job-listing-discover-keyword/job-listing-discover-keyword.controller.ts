@@ -1,9 +1,12 @@
 import { Controller, Post, Body, Get, Param, HttpCode, HttpStatus, Query } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
+import { CurrentUserId } from '../../auth/decorators/user.decorator';
+import { DataCollectionRateLimit, DataRetrievalRateLimit } from '../../common/decorators/rate-limit.decorator';
 import { JobListingDiscoverKeywordService } from './job-listing-discover-keyword.service';
 import { JobSearchDto } from '../../brightdata/dto';
 
 @ApiTags('LinkedIn Job Listing - Discover by Keyword')
+@ApiBearerAuth()
 @Controller('linkedin/job-listing/discover-keyword')
 export class JobListingDiscoverKeywordController {
   constructor(
@@ -11,6 +14,7 @@ export class JobListingDiscoverKeywordController {
   ) {}
 
   @Post()
+  @DataCollectionRateLimit()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Discover LinkedIn job listings by keyword',
@@ -90,6 +94,7 @@ export class JobListingDiscoverKeywordController {
   }
 
   @Get('snapshot/:snapshotId/status')
+  @DataRetrievalRateLimit()
   @ApiOperation({
     summary: 'Check snapshot status',
     description: 'Check the status of a job discovery snapshot'
@@ -112,6 +117,7 @@ export class JobListingDiscoverKeywordController {
   }
 
   @Get('snapshot/:snapshotId/data')
+  @DataRetrievalRateLimit()
   @ApiOperation({
     summary: 'Get snapshot data',
     description: 'Retrieve and save discovered job listing data from a completed snapshot'
@@ -147,6 +153,7 @@ export class JobListingDiscoverKeywordController {
   }
 
   @Get()
+  @DataRetrievalRateLimit()
   @ApiOperation({
     summary: 'Get all discovered job listings',
     description: 'Retrieve all discovered job listings from the database'
@@ -160,6 +167,7 @@ export class JobListingDiscoverKeywordController {
   }
 
   @Get('search/keyword/:keyword')
+  @DataRetrievalRateLimit()
   @ApiOperation({
     summary: 'Get discovered job listings by keyword',
     description: 'Retrieve discovered job listings filtered by search keyword'
@@ -173,6 +181,7 @@ export class JobListingDiscoverKeywordController {
   }
 
   @Get(':id')
+  @DataRetrievalRateLimit()
   @ApiOperation({
     summary: 'Get discovered job listing by ID',
     description: 'Retrieve a specific discovered job listing by its database ID'
@@ -190,6 +199,7 @@ export class JobListingDiscoverKeywordController {
   }
 
   @Get('posting/:postingId')
+  @DataRetrievalRateLimit()
   @ApiOperation({
     summary: 'Get discovered job listing by posting ID',
     description: 'Retrieve a specific discovered job listing by its LinkedIn posting ID'

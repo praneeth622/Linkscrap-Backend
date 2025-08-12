@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { CurrentUserId } from '../../auth/decorators/user.decorator';
+import { DataCollectionRateLimit, DataRetrievalRateLimit } from '../../common/decorators/rate-limit.decorator';
 import { PeopleProfileDiscoverService } from './people-profile-discover.service';
 import { CreatePeopleProfileDiscoverDto } from './dto/create-people-profile-discover.dto';
 import { UpdatePeopleProfileDiscoverDto } from './dto/update-people-profile-discover.dto';
@@ -12,6 +13,7 @@ export class PeopleProfileDiscoverController {
   constructor(private readonly peopleProfileDiscoverService: PeopleProfileDiscoverService) {}
 
   @Post()
+  @DataCollectionRateLimit()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ 
     summary: 'Discover LinkedIn profiles by name',
@@ -75,6 +77,7 @@ export class PeopleProfileDiscoverController {
   }
 
   @Get()
+  @DataRetrievalRateLimit()
   @ApiOperation({ 
     summary: 'Get all discovered profiles',
     description: 'Retrieve all LinkedIn profiles discovered by name searches stored in the database'
@@ -88,6 +91,7 @@ export class PeopleProfileDiscoverController {
   }
 
   @Get(':id')
+  @DataRetrievalRateLimit()
   @ApiOperation({ 
     summary: 'Get discovered profile by ID',
     description: 'Retrieve a specific discovered LinkedIn profile by its database ID'
@@ -108,6 +112,7 @@ export class PeopleProfileDiscoverController {
   }
 
   @Get('linkedin-id/:linkedinId')
+  @DataRetrievalRateLimit()
   @ApiOperation({
     summary: 'Get discovered profile by LinkedIn ID',
     description: 'Retrieve a specific discovered LinkedIn profile by its LinkedIn ID'
@@ -128,6 +133,7 @@ export class PeopleProfileDiscoverController {
   }
 
   @Get('search/:firstName/:lastName')
+  @DataRetrievalRateLimit()
   @ApiOperation({
     summary: 'Search discovered profiles by name',
     description: 'Search for discovered profiles by first name and last name'
@@ -145,6 +151,7 @@ export class PeopleProfileDiscoverController {
   }
 
   @Get('snapshot/:snapshotId/status')
+  @DataRetrievalRateLimit()
   @ApiOperation({
     summary: 'Check discovery snapshot status',
     description: 'Check the status of a BrightData discover snapshot. Possible statuses: running, completed, ready, failed, error'
@@ -171,6 +178,7 @@ export class PeopleProfileDiscoverController {
   }
 
   @Get('snapshot/:snapshotId/data')
+  @DataRetrievalRateLimit()
   @ApiOperation({
     summary: 'Get discovery snapshot data',
     description: 'Retrieve the discovered profile data from a completed BrightData snapshot. Only works when status is "completed" or "ready".'
@@ -235,11 +243,13 @@ export class PeopleProfileDiscoverController {
   }
 
   @Get('all')
+  @DataRetrievalRateLimit()
   findAll(@CurrentUserId() userId: string) {
     return this.peopleProfileDiscoverService.findAll(userId);
   }
 
   @Get('findone/:id')
+  @DataRetrievalRateLimit()
   findOne(
     @Param('id') id: string,
     @CurrentUserId() userId: string
@@ -248,6 +258,7 @@ export class PeopleProfileDiscoverController {
   }
 
   @Patch(':id')
+  @DataRetrievalRateLimit()
   update(
     @Param('id') id: string,
     @Body() updatePeopleProfileDiscoverDto: UpdatePeopleProfileDiscoverDto,
@@ -257,6 +268,7 @@ export class PeopleProfileDiscoverController {
   }
 
   @Delete(':id')
+  @DataRetrievalRateLimit()
   remove(
     @Param('id') id: string,
     @CurrentUserId() userId: string

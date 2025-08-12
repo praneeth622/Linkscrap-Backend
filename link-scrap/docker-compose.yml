@@ -1,6 +1,35 @@
 version: '3.8'
 
 services:
+  # Main Application
+  app:
+    build:
+      context: .
+      target: development
+    container_name: linkscrap-api-dev
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://postgres:password@postgres:5432/linkscrap_db
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      # Add other environment variables from .env
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - linkscrap-network
+    command: npm run start:dev
+
+  # PostgreSQL Database
   postgres:
     image: postgres:15-alpine
     container_name: linkscrap_postgres
@@ -9,17 +38,54 @@ services:
       POSTGRES_DB: linkscrap_db
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
+      PGDATA: /var/lib/postgresql/data/pgdata
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      - postgres_data:/var/lib/postgresql/data/pgdata
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d linkscrap_db"]
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - linkscrap-network
 
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: linkscrap-redis-dev
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - linkscrap-network
+
+  # Redis Commander (Optional - for Redis GUI)
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: linkscrap-redis-commander
+    environment:
+      REDIS_HOSTS: local:redis:6379
+    ports:
+      - "8081:8081"
+    depends_on:
+      - redis
+    networks:
+      - linkscrap-network
+    profiles:
+      - debug
+
+  # PostgreSQL Admin
   pgadmin:
     image: dpage/pgadmin4:latest
     container_name: linkscrap_pgadmin
@@ -27,13 +93,27 @@ services:
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@linkscrap.com
       PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
     ports:
       - "8080:80"
     depends_on:
       - postgres
     volumes:
       - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - linkscrap-network
+    profiles:
+      - debug
 
 volumes:
   postgres_data:
+    driver: local
+  redis_data:
+    driver: local
   pgadmin_data:
+    driver: local
+
+networks:
+  linkscrap-network:
+    driver: bridge
+    name: linkscrap-network

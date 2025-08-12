@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Body, Param, Delete, HttpCode, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBearerAuth } from '@nestjs/swagger';
 import { CurrentUserId } from '../../auth/decorators/user.decorator';
+import { DataCollectionRateLimit, DataRetrievalRateLimit } from '../../common/decorators/rate-limit.decorator';
 import { CompanyInfoCollectService } from './company-info-collect.service';
 import { CompanyUrlDto } from '../../brightdata/dto';
 
@@ -11,6 +12,7 @@ export class CompanyInfoCollectController {
   constructor(private readonly companyInfoCollectService: CompanyInfoCollectService) {}
 
   @Post()
+  @DataCollectionRateLimit()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Collect LinkedIn company information by URLs',
@@ -64,6 +66,7 @@ export class CompanyInfoCollectController {
   }
 
   @Get()
+  @DataRetrievalRateLimit()
   @ApiOperation({
     summary: 'Get all collected company information',
     description: 'Retrieve all company information records from database'
@@ -77,6 +80,7 @@ export class CompanyInfoCollectController {
   }
 
   @Get('company/:companyId')
+  @DataRetrievalRateLimit()
   @ApiOperation({
     summary: 'Get company information by company ID',
     description: 'Retrieve company information by LinkedIn company ID'
@@ -98,6 +102,7 @@ export class CompanyInfoCollectController {
   }
 
   @Get('url/:encodedUrl')
+  @DataRetrievalRateLimit()
   @ApiOperation({
     summary: 'Get company information by original URL',
     description: 'Retrieve company information by original LinkedIn URL (URL encoded)'
@@ -116,6 +121,7 @@ export class CompanyInfoCollectController {
   }
 
   @Get(':id')
+  @DataRetrievalRateLimit()
   @ApiOperation({
     summary: 'Get company information by record ID',
     description: 'Retrieve specific company information by database record ID'
@@ -137,6 +143,7 @@ export class CompanyInfoCollectController {
   }
 
   @Delete(':id')
+  @DataRetrievalRateLimit()
   @ApiOperation({ 
     summary: 'Delete company information record',
     description: 'Delete a specific company information record by ID'

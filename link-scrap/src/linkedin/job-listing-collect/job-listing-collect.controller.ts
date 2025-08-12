@@ -1,6 +1,7 @@
 import { Controller, Post, Body, Get, Param, HttpCode, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { CurrentUserId } from '../../auth/decorators/user.decorator';
+import { DataCollectionRateLimit, DataRetrievalRateLimit } from '../../common/decorators/rate-limit.decorator';
 import { JobListingCollectService } from './job-listing-collect.service';
 import { LinkedInJobUrlDto } from '../../brightdata/dto';
 
@@ -13,6 +14,7 @@ export class JobListingCollectController {
   ) {}
 
   @Post()
+  @DataCollectionRateLimit()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Collect LinkedIn job listings by URLs',
@@ -70,6 +72,7 @@ export class JobListingCollectController {
   }
 
   @Get('snapshot/:snapshotId/status')
+  @DataRetrievalRateLimit()
   @ApiOperation({
     summary: 'Check snapshot status',
     description: 'Check the status of a data collection snapshot'
@@ -92,6 +95,7 @@ export class JobListingCollectController {
   }
 
   @Get('snapshot/:snapshotId/data')
+  @DataRetrievalRateLimit()
   @ApiOperation({
     summary: 'Get snapshot data',
     description: 'Retrieve and save job listing data from a completed snapshot'
@@ -128,6 +132,7 @@ export class JobListingCollectController {
   }
 
   @Get()
+  @DataRetrievalRateLimit()
   @ApiOperation({
     summary: 'Get all job listings',
     description: 'Retrieve all collected job listings from the database'
@@ -141,6 +146,7 @@ export class JobListingCollectController {
   }
 
   @Get(':id')
+  @DataRetrievalRateLimit()
   @ApiOperation({
     summary: 'Get job listing by ID',
     description: 'Retrieve a specific job listing by its database ID'
@@ -161,6 +167,7 @@ export class JobListingCollectController {
   }
 
   @Get('posting/:postingId')
+  @DataRetrievalRateLimit()
   @ApiOperation({
     summary: 'Get job listing by posting ID',
     description: 'Retrieve a specific job listing by its LinkedIn posting ID'

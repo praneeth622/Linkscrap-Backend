@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { CacheModule } from '@nestjs/cache-manager';
 import { APP_GUARD } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -17,6 +19,8 @@ import { PostDiscoverCompanyModule } from './linkedin/post-discover-company/post
 import { PostDiscoverProfileModule } from './linkedin/post-discover-profile/post-discover-profile.module';
 import { PostDiscoverUrlModule } from './linkedin/post-discover-url/post-discover-url.module';
 import { PeopleSearchCollectModule } from './linkedin/people-search-collect/people-search-collect.module';
+import { rateLimitConfig } from './config/rate-limit.config';
+import { redisConfig, memoryStoreConfig } from './config/redis.config';
 
 @Module({
   imports: [
@@ -24,6 +28,20 @@ import { PeopleSearchCollectModule } from './linkedin/people-search-collect/peop
       isGlobal: true,
       envFilePath: '.env',
     }),
+    // Cache Module with Redis fallback to memory
+    CacheModule.registerAsync({
+      useFactory: () => {
+        try {
+          // Try Redis first
+          return redisConfig;
+        } catch (error) {
+          console.warn('Redis not available, falling back to memory store:', error.message);
+          return memoryStoreConfig;
+        }
+      },
+    }),
+    // Rate limiting with multiple throttlers
+    ThrottlerModule.forRoot(rateLimitConfig),
     TypeOrmModule.forRoot({
       type: 'postgres',
       url: process.env.DATABASE_URL || 'postgresql://postgres:password@localhost:5432/linkscrap_db',
@@ -49,6 +67,10 @@ import { PeopleSearchCollectModule } from './linkedin/people-search-collect/peop
     {
       provide: APP_GUARD,
       useClass: AuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
     },
   ],
 })
