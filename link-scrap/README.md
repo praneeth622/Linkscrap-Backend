@@ -177,6 +177,72 @@ docker build -t linkedin-scraper-api .
 docker run -p 3000:3000 --env-file .env linkedin-scraper-api
 ```
 
+## 📖 Usage Examples
+
+### Authentication Flow
+```javascript
+// 1. Authenticate with Supabase (frontend)
+const { data: { session } } = await supabase.auth.signInWithPassword({
+  email: 'user@example.com',
+  password: 'password'
+});
+
+// 2. Use JWT token in API requests
+const response = await fetch('http://localhost:3000/linkedin/people-profile/collect', {
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${session.access_token}`,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    urls: ['https://linkedin.com/in/johndoe']
+  })
+});
+```
+
+### Data Collection Workflow
+```javascript
+// 1. Start data collection
+const collection = await fetch('/linkedin/people-profile/collect', {
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${token}`,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({ urls: ['https://linkedin.com/in/johndoe'] })
+});
+const { snapshot_id } = await collection.json();
+
+// 2. Check status
+const status = await fetch(`/linkedin/people-profile/collect/snapshot/${snapshot_id}/status`, {
+  headers: { 'Authorization': `Bearer ${token}` }
+});
+
+// 3. Retrieve data when ready
+const data = await fetch(`/linkedin/people-profile/collect/snapshot/${snapshot_id}/data`, {
+  headers: { 'Authorization': `Bearer ${token}` }
+});
+```
+
+### Complete API Integration Example
+```javascript
+import LinkedInAPIClient from './gist/api-client-example.js';
+
+const client = new LinkedInAPIClient({
+  baseURL: 'http://localhost:3000',
+  supabaseUrl: 'https://your-project.supabase.co',
+  supabaseKey: 'your-supabase-anon-key'
+});
+
+// Authenticate and collect data
+await client.authenticate('user@example.com', 'password');
+const profiles = await client.collectProfiles(['https://linkedin.com/in/johndoe']);
+const jobs = await client.discoverJobsByKeyword({
+  keyword: 'Software Engineer',
+  location: 'San Francisco, CA'
+});
+```
+
 ## 🔧 Environment Setup
 
 Create a `.env` file in the `link-scrap` directory with the following variables:
