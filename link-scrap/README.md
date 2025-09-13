@@ -1,64 +1,180 @@
-# LinkedIn BrightData API Backend
+# LinkedIn Data Scraping Backend API
 
-A comprehensive backend API for LinkedIn data collection using BrightData integration. This API provides extensive LinkedIn data collection capabilities with robust authentication, rate limiting, and comprehensive error handling.
+A comprehensive, enterprise-grade backend system for LinkedIn data collection and management, built with NestJS and integrated with BrightData's professional scraping infrastructure.
 
-## 🚀 Features
+## 🚀 Repository Overview
 
-- **11 LinkedIn Data Collection APIs** for comprehensive LinkedIn data scraping
-- **JWT Authentication** with Supabase integration
-- **Advanced Rate Limiting** with different limits for different endpoint types
-- **Comprehensive API Documentation** with Swagger/OpenAPI
-- **Database Integration** with PostgreSQL and TypeORM
-- **Docker Support** for development and production deployment
-- **Redis Caching** with fallback to in-memory storage
-- **Comprehensive Testing** with Jest and Supertest
-- **Error Handling** with detailed error responses
+This repository provides a robust, scalable backend API for collecting and managing LinkedIn data across multiple categories:
 
-## 📋 Table of Contents
+- **People Profiles**: Detailed profile information, experience, education, skills
+- **Job Listings**: Job postings, requirements, company information, application details
+- **Company Information**: Company profiles, employee counts, industry data
+- **LinkedIn Posts**: Posts, articles, engagement metrics, content analysis
+- **People Search**: Advanced search capabilities with filters and location targeting
 
-- [Quick Start](#quick-start)
-- [Environment Setup](#environment-setup)
-- [Database Setup](#database-setup)
-- [Authentication Setup](#authentication-setup)
-- [API Reference](#api-reference)
-- [Rate Limiting](#rate-limiting)
-- [Docker Deployment](#docker-deployment)
-- [Testing](#testing)
-- [Error Handling](#error-handling)
-- [Troubleshooting](#troubleshooting)
+### Architecture Overview
 
-## 🎯 Quick Start
+The system follows a modular, microservice-inspired architecture within a monolithic NestJS application:
+
+```
+├── src/
+│   ├── auth/                 # Supabase authentication & JWT handling
+│   ├── brightdata/           # BrightData API integration & DTOs
+│   ├── config/               # Rate limiting, Redis, database configuration
+│   ├── database/             # Database utilities and migrations
+│   ├── entities/             # TypeORM database entities
+│   └── linkedin/             # LinkedIn data collection modules
+│       ├── people-profile-collect/     # Profile data collection
+│       ├── people-profile-discover/    # Profile discovery by search
+│       ├── job-listing-collect/        # Job data collection
+│       ├── job-listing-discover-*/     # Job discovery (keyword/URL)
+│       ├── company-info-collect/       # Company data collection
+│       ├── post-collect/               # Post/article collection
+│       ├── post-discover-*/            # Post discovery (company/profile/URL)
+│       └── people-search-collect/      # Advanced people search
+```
+
+## 🛠 Technology Stack
+
+### Core Framework & Language
+- **NestJS 11.x** - Progressive Node.js framework with TypeScript
+- **TypeScript 5.7+** - Type-safe development with latest features
+- **Node.js 18+** - Runtime environment
+
+### Database & ORM
+- **PostgreSQL** - Primary database (Neon.tech hosted)
+- **TypeORM 0.3+** - Object-relational mapping with entity management
+- **Database Migrations** - Automated schema management
+
+### Authentication & Security
+- **Supabase Auth** - JWT-based authentication system
+- **JWT Tokens** - Secure user session management
+- **User Data Isolation** - Complete data segregation by user ID
+- **Rate Limiting** - Multi-tier throttling with Redis backing
+
+### Caching & Performance
+- **Redis** - Primary caching layer for rate limiting and data caching
+- **Memory Store Fallback** - Automatic fallback when Redis unavailable
+- **Connection Pooling** - Optimized database connections
+
+### API & Documentation
+- **Swagger/OpenAPI 3.0** - Comprehensive API documentation
+- **Zod Validation** - Runtime type validation and schema generation
+- **RESTful APIs** - Standard HTTP methods and status codes
+
+### External Integrations
+- **BrightData API** - Professional LinkedIn scraping infrastructure
+- **Multiple Dataset Support** - Different scrapers for different data types
+
+### Development & Testing
+- **Jest** - Unit and integration testing framework
+- **ESLint + Prettier** - Code quality and formatting
+- **Hot Reload** - Development server with auto-restart
+
+## ✨ Key Features
+
+### 🔒 Advanced Rate Limiting
+Multi-tier rate limiting system with Redis backing:
+
+- **Health Endpoints**: 60 requests/minute
+- **Authentication**: 5 requests/minute
+- **Data Collection**: 10 requests/hour (resource-intensive operations)
+- **Data Retrieval**: 100 requests/hour
+- **Default**: 100 requests/minute
+
+### 🔐 Enterprise Security
+- **JWT Authentication** - Supabase-powered secure authentication
+- **User Data Isolation** - Complete data segregation per user
+- **Bearer Token Authorization** - Industry-standard auth headers
+- **Input Validation** - Comprehensive Zod schema validation
+
+### 📊 Comprehensive Data Collection
+- **Asynchronous Processing** - Non-blocking data collection with status tracking
+- **Snapshot Management** - Track collection progress and retrieve results
+- **Data Persistence** - Automatic database storage with relationship mapping
+- **Error Handling** - Robust error management and user feedback
+
+### 🐳 Docker Support
+- **Multi-stage Builds** - Optimized production images
+- **Docker Compose** - Complete development environment
+- **Environment Configuration** - Flexible deployment options
+
+## � API Documentation
+
+### Live Documentation
+- **Swagger UI**: `http://localhost:3000/api-docs`
+- **OpenAPI Spec**: Auto-generated from code annotations
+
+### Authentication
+All endpoints (except health checks) require JWT authentication:
+
+```bash
+Authorization: Bearer <supabase_jwt_token>
+Content-Type: application/json
+```
+
+### Rate Limiting Headers
+API responses include rate limiting information:
+
+```
+X-RateLimit-Limit: 10
+X-RateLimit-Remaining: 9
+X-RateLimit-Reset: 1640995200
+```
+
+## 🚀 Quick Start
 
 ### Prerequisites
-
-- Node.js 18+ and npm
-- PostgreSQL database
-- Supabase account (for authentication)
-- BrightData account (for LinkedIn scraping)
-- Redis (optional, for better rate limiting performance)
+- **Node.js 18+**
+- **PostgreSQL 14+** (or use provided Neon.tech connection)
+- **Redis** (optional, falls back to memory)
+- **Docker & Docker Compose** (for containerized setup)
 
 ### Installation
 
+1. **Clone the repository**
 ```bash
-# Clone the repository
-git clone https://github.com/your-username/linkscrap-backend.git
-cd linkscrap-backend/link-scrap
+git clone <repository-url>
+cd link-scrap
+```
 
-# Install dependencies
+2. **Install dependencies**
+```bash
 npm install
+```
 
-# Copy environment variables
+3. **Environment setup**
+```bash
 cp .env.example .env
+# Edit .env with your configuration
+```
 
-# Configure your environment variables (see Environment Setup section)
-# Edit .env file with your configurations
+4. **Database setup**
+```bash
+# Database will auto-sync on first run (development)
+# For production, disable synchronize and use migrations
+```
 
-# Start development server
+5. **Start development server**
+```bash
 npm run start:dev
+```
 
-# The API will be available at:
-# - API: http://localhost:3000
-# - Swagger Documentation: http://localhost:3000/api-docs
+The API will be available at:
+- **API**: `http://localhost:3000`
+- **Swagger Docs**: `http://localhost:3000/api-docs`
+
+### Docker Setup
+
+1. **Using Docker Compose**
+```bash
+docker-compose up -d
+```
+
+2. **Build custom image**
+```bash
+docker build -t linkedin-scraper-api .
+docker run -p 3000:3000 --env-file .env linkedin-scraper-api
 ```
 
 ## 🔧 Environment Setup
